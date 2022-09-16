@@ -1,0 +1,1 @@
+# Trollman (adversarial hangman)

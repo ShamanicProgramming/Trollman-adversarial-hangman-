@@ -16,88 +16,97 @@ namespace Trollman
             Random rnd = new Random();
             int numberOfLetters = rnd.Next(3, 15);
 
-            // Find all words of our chosen word size so we can sub them in later when we cheat
-            List<string> wordsOfLetterSize = new List<string>();
+            GameState gameState = new GameState();
 
-            foreach(string word in allWords)
+            foreach (string word in allWords)
             {
-                if(word.Length == numberOfLetters)
+                if (word.Length == numberOfLetters)
                 {
-                    wordsOfLetterSize.Add(word);
+                    gameState.wordsOfLetterSize.Add(word);
                 }
             }
 
-            List<char> wrongLetters = new List<char>();
-
             // Get some word to start
-            var chosenWord = wordsOfLetterSize[rnd.Next(0, wordsOfLetterSize.Count)];
+            gameState.chosenWord = gameState.wordsOfLetterSize[rnd.Next(0, gameState.wordsOfLetterSize.Count)];
 
-            Dictionary<int,char> correctGuesses = new Dictionary<int, char>();
             string clue = new string('-', numberOfLetters);
 
             Console.WriteLine("Welcome to hangman.");
             Console.WriteLine("Your clue is: " + clue);
 
-            var hangman1 = "    ┌────────┐    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────";
-            var hangman2 = "    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────";
-            var hangman3 = "    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n    │        │    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────";
-            var hangman4 = "    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n   ─┼─       │    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────";
-            var hangman5 = "    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n   ─┼─       │    \r\n    │        │    \r\n   / \\       │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────";
+            List<string> hangmanPics = new List<string>();
 
-            List<string> HangmanPics = new List<string> { hangman2 , hangman3, hangman4, hangman5};
+            hangmanPics.Add("    ┌────────┐    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────");
+            hangmanPics.Add("    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────");
+            hangmanPics.Add("    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n    │        │    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────");
+            hangmanPics.Add("    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n   ─┼─       │    \r\n    │        │    \r\n             │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────");
+            hangmanPics.Add("    ┌────────┐    \r\n    │        │    \r\n    O        │    \r\n   ─┼─       │    \r\n    │        │    \r\n   / \\       │    \r\n             │    \r\n             │    \r\n             │    \r\n        ─────┴─────");
 
-            Console.WriteLine(hangman1);
-            
-            while(true)
+            if (GameLoop(rnd, gameState, hangmanPics))
             {
-                Console.Write("Make your guess: ");
-                char guess = Console.ReadLine()[0];
-                wrongLetters.Add(guess);
+                Console.WriteLine("You win");
+            } else
+            {
+                Console.WriteLine("You lose");
+            }
+        }
 
-                if (chosenWord.Contains(guess))
+        /// <summary>
+        /// Returns true if the player wins
+        /// </summary>
+        private static bool GameLoop(Random rnd, GameState gameState, List<string> hangmanPics)
+        {
+            foreach (var hangPic in hangmanPics)
+            {
+
+                Console.WriteLine(hangPic);
+
+                char guess = GetValidGuess();
+                gameState.wrongLetters.Add(guess);
+
+                if (gameState.chosenWord.Contains(guess))
                 {
-                    List<string> newWords = wordsOfLetterSize.Where(word =>
+                    List<string> newWords = gameState.wordsOfLetterSize.Where(word =>
                     !word.Contains(guess) // new words shouldn't have the guessed letter
-                    && wrongLetters.All(letter => !word.Contains(letter)) // new words shouldn't have any wrong letters
-                    && WordContainsAllCorrectGuesses(word, correctGuesses)) // new words need all previous correct guesses
+                    && gameState.wrongLetters.All(letter => !word.Contains(letter)) // new words shouldn't have any wrong letters
+                    && WordContainsAllCorrectGuesses(word, gameState.correctGuesses)) // new words need all previous correct guesses
                         .ToList();
 
                     // if we can find some other word that doesn't have the guessed letter and does have successful letters, cheat and sub it in
                     if (newWords.Count != 0)
                     {
-                        wordsOfLetterSize = newWords;
-                        chosenWord = wordsOfLetterSize[rnd.Next(0, wordsOfLetterSize.Count)];
-                        WrongGuess(wrongLetters, guess);
+                        gameState.wordsOfLetterSize = newWords;
+                        gameState.chosenWord = gameState.wordsOfLetterSize[rnd.Next(0, gameState.wordsOfLetterSize.Count)];
+                        WrongGuess(gameState.wrongLetters, guess);
                     }
                     else
                     {
                         // otherwise we will have to keep the word and add to correct guesses
-                        foreach (int indx in chosenWord.AllIndexesOf(guess))
+                        foreach (int indx in gameState.chosenWord.AllIndexesOf(guess))
                         {
-                            correctGuesses.Add(indx, guess);
+                            gameState.correctGuesses.Add(indx, guess);
                         }
 
-                        if (chosenWord.Length == correctGuesses.Count)
+                        if (gameState.chosenWord.Length == gameState.correctGuesses.Count)
                         {
-                            Console.WriteLine("You win");
-                            continue;
+                            return true;
                         }
-                        else 
+                        else
                         {
                             Console.Write("Correct. Your clue is now: ");
                         }
-                        
+
                     }
                 }
                 else
                 {
-                    WrongGuess(wrongLetters, guess);
+                    WrongGuess(gameState.wrongLetters, guess);
                 }
 
                 // Write out a char of the clue
-                for (int i = 0; i < chosenWord.Length; i++)
+                for (int i = 0; i < gameState.chosenWord.Length; i++)
                 {
-                    char nextCharToWrite = correctGuesses.GetValueOrDefault(i);
+                    char nextCharToWrite = gameState.correctGuesses.GetValueOrDefault(i);
                     if (nextCharToWrite == '\0')
                     {
                         Console.Write('-');
@@ -109,6 +118,28 @@ namespace Trollman
                 }
                 Console.WriteLine("");
 
+            }
+
+            return false;
+        }
+
+        private static char GetValidGuess()
+        {
+            while(true)
+            {
+                Console.Write("Make your guess: ");
+                string guess = Console.ReadLine();
+                if(guess.Length != 1)
+                {
+                    Console.WriteLine("Invalid guess. Guess exactly one character.");
+                    continue;
+                }
+                else if(!char.IsLetter(guess[0]))
+                {
+                    Console.WriteLine("Invalid guess. Guess must be a character.");
+                    continue;
+                }
+                return guess[0];
             }
         }
 
